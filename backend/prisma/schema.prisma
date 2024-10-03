@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  username String  @id @map("username") // ชื่อบัญชีผู้ใช้งาน
+  password String  @map("password")     // รหัสผ่าน
+  Fname    String  @map("Fname")        // ชื่อจริง
+  Lname    String  @map("Lname")        // นามสกุลจริง
+  u_type   Int     @map("u_type")       // ประเภทผู้ใช้งาน
+  
+  Teacher  Teacher?
+  
+  @@map("user")
+}
+
+model Teacher {
+  T_ID     Int     @id @map("T_ID")      // รหัสอาจารย์
+  username String  @unique@map("username")      // ชื่อบัญชี (FK จาก user)
+  
+  Backup   Backup[]
+  Subject  Subject[]
+
+  User     User    @relation(fields: [username], references: [username])
+
+  @@map("teacher")
+}
+
+model Subject {
+  S_ID     String  @id @map("S_ID")      // รหัสวิชา
+  T_ID     Int     @map("T_ID")          // รหัสอาจารย์ (FK จาก teacher)
+  Name     String  @map("Name")          // ชื่อวิชา
+  
+  ExamDetail ExamDetail[]
+  
+  Teacher  Teacher  @relation(fields: [T_ID], references: [T_ID])
+
+  @@map("subject")
+}
+
+model ExamDetail {
+  S_ID    String  @map("S_ID")           // รหัสวิชา
+  XD_ID   Int     @map("XD_ID")          // รหัสรายละเอียดการสอบ
+  
+  Subject Subject @relation(fields: [S_ID], references: [S_ID])
+
+  @@id([S_ID, XD_ID])
+  @@map("examdetail")
+}
+
+model Backup {
+  S_ID         String  @map("S_ID") // รหัสวิชา
+  Year         Int     @map("Year")     // ปีการศึกษา (20XX)
+  Semester     Int     @map("Semester") // ภาคการศึกษา
+  XD_ID        Int     @map("XD_ID")    // ลำดับรายละเอียดการสอบ
+  Exam_period  Int     @map("Exam_period") // ลักษณะการสอบ
+  S_name       String  @map("S_name")      // ชื่อวิชา
+  Credit       Int     @map("Credit")      // หน่วยกิต
+  Sec          Int     @map("Sec")         // ตอน
+  Major        Int     @map("Major")       // สาขาวิชา
+  Status       Int     @map("Status")      // สถานะการดำเนินการของข้อสอบ
+  n_std        Int     @map("n_std")       // จำนวนผู้เข้าสอบ
+  T_ID         Int     @map("T_ID")        // รหัสอาจารย์ (FK)
+  
+  Teacher      Teacher @relation(fields: [T_ID], references: [T_ID])
+
+  @@id([S_ID, Year, Semester, XD_ID])
+  @@map("backup")
+}
