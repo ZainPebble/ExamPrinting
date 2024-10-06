@@ -13,68 +13,91 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  username String  @id @map("username") // ชื่อบัญชีผู้ใช้งาน
-  password String  @map("password")     // รหัสผ่าน
-  Fname    String  @map("Fname")        // ชื่อจริง
-  Lname    String  @map("Lname")        // นามสกุลจริง
-  u_type   Int     @map("u_type")       // ประเภทผู้ใช้งาน
-  
-  Teacher  Teacher?
-  
-  @@map("user")
-}
+model Backup {
+  S_ID        String  @db.VarChar(7)
+  Year        Int     @db.Year
+  Semester    Int     @db.Int
+  XD_ID       Int
+  Exam_period Int
+  S_name      String  @db.VarChar(100)
+  Credit      Int
+  Sec         Int
+  Major       Int
+  n_std       Int
+  T_ID        Int
+  Additional  String  @db.Text
+  Type_exam   Int
+  Exam_start  DateTime @db.Time
+  Exam_end    DateTime @db.Time
+  Room        String  @db.VarChar(10)
+  Date        DateTime @db.Date
+  Side        Int
+  ExamFile    Bytes
 
-model Teacher {
-  T_ID     Int     @id @map("T_ID")      // รหัสอาจารย์
-  username String  @unique@map("username")      // ชื่อบัญชี (FK จาก user)
-  
-  Backup   Backup[]
-  Subject  Subject[]
+  teacher     Teacher @relation(fields: [T_ID], references: [T_ID])
 
-  User     User    @relation(fields: [username], references: [username])
-
-  @@map("teacher")
-}
-
-model Subject {
-  S_ID     String  @id @map("S_ID")      // รหัสวิชา
-  T_ID     Int     @map("T_ID")          // รหัสอาจารย์ (FK จาก teacher)
-  Name     String  @map("Name")          // ชื่อวิชา
-  
-  ExamDetail ExamDetail[]
-  
-  Teacher  Teacher  @relation(fields: [T_ID], references: [T_ID])
-
-  @@map("subject")
+  @@id([S_ID, Year, Semester, XD_ID])
 }
 
 model ExamDetail {
-  S_ID    String  @map("S_ID")           // รหัสวิชา
-  XD_ID   Int     @map("XD_ID")          // รหัสรายละเอียดการสอบ
-  
-  Subject Subject @relation(fields: [S_ID], references: [S_ID])
+  S_ID        String  @db.VarChar(7)
+  XD_ID       Int
+  Exam_period Int
+  Type_exam   Int
+  ExamFile    Bytes
+  Date        DateTime @db.Date
+  Exam_start  DateTime @db.Time
+  Exam_end    DateTime @db.Time
+  Room        String  @db.VarChar(10)
+  Side        Int
+  Tool_Book   Boolean
+  Tool_Calculator Boolean
+  Tool_MfRuler    Boolean
+  Additional  String  @db.Text
+
+  subject     Subject @relation(fields: [S_ID], references: [S_ID])
 
   @@id([S_ID, XD_ID])
-  @@map("examdetail")
 }
 
-model Backup {
-  S_ID         String  @map("S_ID") // รหัสวิชา
-  Year         Int     @map("Year")     // ปีการศึกษา (20XX)
-  Semester     Int     @map("Semester") // ภาคการศึกษา
-  XD_ID        Int     @map("XD_ID")    // ลำดับรายละเอียดการสอบ
-  Exam_period  Int     @map("Exam_period") // ลักษณะการสอบ
-  S_name       String  @map("S_name")      // ชื่อวิชา
-  Credit       Int     @map("Credit")      // หน่วยกิต
-  Sec          Int     @map("Sec")         // ตอน
-  Major        Int     @map("Major")       // สาขาวิชา
-  Status       Int     @map("Status")      // สถานะการดำเนินการของข้อสอบ
-  n_std        Int     @map("n_std")       // จำนวนผู้เข้าสอบ
-  T_ID         Int     @map("T_ID")        // รหัสอาจารย์ (FK)
-  
-  Teacher      Teacher @relation(fields: [T_ID], references: [T_ID])
+model Subject {
+  S_ID     String  @db.VarChar(7)
+  S_name   String  @db.VarChar(100)
+  Year     Int     @db.Year
+  Semester Int     @db.Int
+  Sec      Int
+  Credit   Int
+  Major    Int
+  n_std    Int
+  Status   Int
+  T_ID     Int
 
-  @@id([S_ID, Year, Semester, XD_ID])
-  @@map("backup")
+  teacher  Teacher @relation(fields: [T_ID], references: [T_ID])
+  exams    ExamDetail[]
+
+  @@id(S_ID)
 }
+
+model Teacher {
+  T_ID     Int     @id
+  Tel      Int
+  Email    String  @db.VarChar(255)
+  username String  @db.VarChar(255)
+
+  user     User    @relation(fields: [username], references: [username])
+  subjects Subject[]
+  backups  Backup[]
+
+  @@index([username], name: "T_ID-username")
+}
+
+model User {
+  username String  @id @db.VarChar(255)
+  password String  @db.VarChar(255)
+  Fname    String  @db.VarChar(100)
+  Lname    String  @db.VarChar(100)
+  u_type   Int
+
+  teachers Teacher[]
+}
+

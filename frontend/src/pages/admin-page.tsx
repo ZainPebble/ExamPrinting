@@ -158,6 +158,11 @@ const AdminDashboard = () => {
         }
     };
 
+
+    const handlePrint = () => {
+        window.print();
+    };
+
     const handleChange = (e: any) => {
         setUserData({
             ...userData,
@@ -199,6 +204,9 @@ const AdminDashboard = () => {
                     <TextField placeholder="Search for Users" variant="outlined" size="small" sx={{ width: '300px' }} />
                     <Button variant="contained" startIcon={<Add />} sx={{ backgroundColor: '#001e3c', py: 1.5 }} onClick={handleClickOpen}>
                         Add
+                    </Button>
+                    <Button onClick={handlePrint}>
+                        Print
                     </Button>
                 </Box>
 
@@ -321,7 +329,7 @@ const AdminDashboard = () => {
 
             {/* Dialog Edit User */}
             <Dialog open={editOpen} onClose={handleEditClose}>
-                <DialogTitle sx={{ backgroundColor: '#0f4c81', color: 'white' }}>Edit User</DialogTitle>
+                <DialogTitle sx={{ backgroundColor: '#0f4c81', color: 'white' }}>Edit Existing User</DialogTitle>
                 <DialogContent>
                     <TextField
                         label="Username"
@@ -388,7 +396,7 @@ const AdminDashboard = () => {
                 </DialogActions>
             </Dialog>
 
-            {/* Dialog Delete User */}                
+            {/* Dialog Delete User */}
             <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)}>
                 <DialogTitle>Confirm Delete</DialogTitle>
                 <DialogContent>
