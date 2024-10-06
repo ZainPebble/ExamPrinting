@@ -11,6 +11,7 @@ interface User {
 }
 
 const AdminDashboard = () => {
+    const name = localStorage.getItem('name');
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -158,9 +159,8 @@ const AdminDashboard = () => {
         }
     };
 
-
-    const handlePrint = () => {
-        window.print();
+    const handleSidebarButtonClick = () => {
+        window.location.href = '/backup'; // เปลี่ยนเส้นทางไปยังหน้า Tech
     };
 
     const handleChange = (e: any) => {
@@ -176,7 +176,7 @@ const AdminDashboard = () => {
             <Box sx={{ width: '250px', backgroundColor: '#001e3c', color: '#fff' }}>
                 <Box sx={{ width: '100%', borderBottom: '1px solid #fff' }}>
                     <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', marginTop: '35px', marginBottom: '5px', textAlign: 'center' }}>Welcome</Typography>
-                    <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', marginBottom: '35px', textAlign: 'center' }}>Admin</Typography>
+                    <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', marginBottom: '35px', textAlign: 'center' }}>{name}</Typography>
                 </Box>
                 <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <Button variant="contained" sx={{ backgroundColor: '#0f4c81', mb: 2, py: 1.5, marginTop: '20px', width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
@@ -185,7 +185,7 @@ const AdminDashboard = () => {
                         </IconButton>
                         User
                     </Button>
-                    <Button variant="contained" sx={{ backgroundColor: '#001e3c', py: 1.5, width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
+                    <Button variant="contained" onClick={handleSidebarButtonClick} sx={{ backgroundColor: '#001e3c', py: 1.5, width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
                         <IconButton sx={{ color: '#fff' }}>
                             <MenuBook />
                         </IconButton>
@@ -204,9 +204,6 @@ const AdminDashboard = () => {
                     <TextField placeholder="Search for Users" variant="outlined" size="small" sx={{ width: '300px' }} />
                     <Button variant="contained" startIcon={<Add />} sx={{ backgroundColor: '#001e3c', py: 1.5 }} onClick={handleClickOpen}>
                         Add
-                    </Button>
-                    <Button onClick={handlePrint}>
-                        Print
                     </Button>
                 </Box>
 

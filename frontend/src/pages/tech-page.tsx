@@ -20,6 +20,7 @@ interface Subject {
 }
 
 const TechDashboard = () => {
+    const name = localStorage.getItem('name');
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -96,7 +97,11 @@ const TechDashboard = () => {
     const handlePrintClick = (subjectId: string) => {
         // เมื่อกดปุ่ม Print จะเปลี่ยนหน้าไปยังหน้าการปริ้นส์
         navigate(`/print/${subjectId}`);
-      };
+    };
+
+    const handleSidebarButtonClick = () => {
+        window.location.href = '/backup'; // เปลี่ยนเส้นทางไปยังหน้า Tech
+    };
 
     const handleChange = (event: { target: { name: any; value: any; }; }) => {
         const { name, value } = event.target;
@@ -116,7 +121,7 @@ const TechDashboard = () => {
             <Box sx={{ width: '250px', backgroundColor: '#001e3c', color: '#fff' }}>
                 <Box sx={{ width: '100%', borderBottom: '1px solid #fff' }}>
                     <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', marginTop: '35px', marginBottom: '5px', textAlign: 'center' }}>Welcome</Typography>
-                    <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', marginBottom: '35px', textAlign: 'center' }}>User</Typography>
+                    <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', marginBottom: '35px', textAlign: 'center' }}>{name}</Typography>
                 </Box>
                 <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <Button variant="contained" sx={{ backgroundColor: '#0f4c81', mb: 2, py: 1.5, marginTop: '20px', width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
@@ -125,7 +130,7 @@ const TechDashboard = () => {
                         </IconButton>
                         Exams
                     </Button>
-                    <Button variant="contained" sx={{ backgroundColor: '#001e3c', py: 1.5, width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
+                    <Button variant="contained" onClick={handleSidebarButtonClick} sx={{ backgroundColor: '#001e3c', py: 1.5, width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
                         <IconButton sx={{ color: '#fff' }}>
                             <MenuBook />
                         </IconButton>
