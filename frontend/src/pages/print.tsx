@@ -121,7 +121,7 @@ const PrintForm: React.FC = () => {
 
                         {/* Attendance Section */}
                         <div style={{ marginBottom: '20px' }}>
-                            <p><strong>จำนวนนักศึกษาที่เข้าสอบ</strong>.........................คน&nbsp;&nbsp;&nbsp;
+                            <p><strong>จำนวนนักศึกษาที่เข้าสอบ</strong>.........................คน&nbsp;&nbsp;&nbsp;<br /><br />
                                 <strong>จำนวนนักศึกษาที่ขาดสอบ</strong>........................คน
                             </p>
                         </div>
