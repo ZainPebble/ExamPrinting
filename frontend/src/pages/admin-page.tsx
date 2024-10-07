@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, TextField, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
-import { Edit, Delete, Add, PermIdentity, MenuBook } from '@mui/icons-material';
+import { PermIdentity, MenuBook,AddCircleOutline,BorderColorOutlined,DeleteOutline } from '@mui/icons-material';
 import axios from 'axios';
 
 interface User {
@@ -199,10 +199,10 @@ const AdminDashboard = () => {
                 <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>User Dashboard</Typography>
 
                 {/* Search and Add User */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>List Users</Typography>
-                    <TextField placeholder="Search for Users" variant="outlined" size="small" sx={{ width: '300px' }} />
-                    <Button variant="contained" startIcon={<Add />} sx={{ backgroundColor: '#001e3c', py: 1.5 }} onClick={handleClickOpen}>
+                <Box sx={{ display: 'flex', justifyContent: 'left', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' ,mr:'50px'}}>List Users</Typography>
+                    <TextField placeholder="Search for Users" variant="outlined" size="small" sx={{ width: '300px',mr:'710px' }} />
+                    <Button variant="contained" startIcon={<AddCircleOutline />} sx={{ backgroundColor: '#001e3c', py: 1.5 }} onClick={handleClickOpen}>
                         Add
                     </Button>
                 </Box>
@@ -212,38 +212,41 @@ const AdminDashboard = () => {
                     <Table>
                         <TableHead sx={{ backgroundColor: '#E3F2FD' }}>
                             <TableRow>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Username</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Role</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 'bold' }}></TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}>Username</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}>Name</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}>Role</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {users.map((user) => (
                                 <TableRow key={user.username}>
-                                    <TableCell>{user.username}</TableCell>
-                                    <TableCell>{`${user.Fname} ${user.Lname}`}</TableCell>
-                                    <TableCell>
+                                    <TableCell align='center'>{user.username}</TableCell>
+                                    <TableCell align='center'>{`${user.Fname} ${user.Lname}`}</TableCell>
+                                    <TableCell align='center'>
                                         <Button
                                             variant="contained"
                                             sx={{
-                                                backgroundColor: user.u_type === 1 ? '#001e3c' : '#0f4c81',
+                                                backgroundColor: '#001e3c',
                                                 color: '#fff',
                                                 borderRadius: '20px',
                                                 fontSize: '12px',
                                                 textTransform: 'none',
-                                                padding: '4px 12px'
+                                                padding: '4px 12px',
+                                                width: '160px', // ขนาดปุ่มคงที่
+                                                minWidth: '160px', // ป้องกันขนาดเล็กเกินไป
+                                                textAlign: 'center'
                                             }}
                                         >
                                             {user.u_type === 1 ? 'Admin' : user.u_type === 2 ? 'อาจารย์' : user.u_type === 3 ? 'เจ้าหน้าที่ดำเนินการสอบ' : 'หน่วยเทคโนโลยีการศึกษา'}
                                         </Button>
                                     </TableCell>
                                     <TableCell align="center">
-                                        <IconButton color="primary" onClick={() => handleEditOpen(user)}>
-                                            <Edit />
+                                        <IconButton sx={{color:'#000'}} onClick={() => handleEditOpen(user)}>
+                                            <BorderColorOutlined />
                                         </IconButton>
-                                        <IconButton color="secondary" onClick={() => handleDeleteOpen(user)}>
-                                            <Delete />
+                                        <IconButton sx={{color:'#000'}} onClick={() => handleDeleteOpen(user)}>
+                                            <DeleteOutline />
                                         </IconButton>
                                     </TableCell>
                                 </TableRow>

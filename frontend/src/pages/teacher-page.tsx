@@ -20,7 +20,7 @@ import {
     FormControlLabel,
     Checkbox,
 } from '@mui/material';
-import { Add, PermIdentity, MenuBook } from '@mui/icons-material';
+import { PermIdentity, MenuBook, DescriptionOutlined, EditOutlined } from '@mui/icons-material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,6 +28,7 @@ import { useNavigate } from 'react-router-dom';
 interface Subject {
     S_ID: string;
     S_name: string;
+    Status: number;
 }
 
 // กำหนดประเภทสำหรับ ExamDetail
@@ -235,7 +236,7 @@ const TeacherDashboard: React.FC = () => {
 
     const handleProfileUpdate = async () => {
         if (!teacherProfile) return; // ตรวจสอบว่า teacherProfile มีข้อมูลหรือไม่
-    
+
         try {
             const response = await axios.put(`http://localhost:3000/teachers/update`, {
                 T_ID: teacherProfile.T_ID, // ใช้ T_ID ที่ถูกต้อง
@@ -250,7 +251,7 @@ const TeacherDashboard: React.FC = () => {
             console.error("Error updating profile:", error);
         }
     };
-    
+
 
     if (loading) return <Typography>Loading...</Typography>;
 
@@ -260,40 +261,80 @@ const TeacherDashboard: React.FC = () => {
             <Box sx={{ width: '250px', backgroundColor: '#001e3c', color: '#fff' }}>
                 <Box sx={{ width: '100%', borderBottom: '1px solid #fff' }}>
                     <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', marginTop: '35px', marginBottom: '5px', textAlign: 'center' }}>Welcome</Typography>
-                    <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', marginBottom: '35px', textAlign: 'center' }}>{name}</Typography>
+                    <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', marginBottom: '15px', textAlign: 'center' }}>{name}</Typography>
+                    <Button
+                        variant="contained"
+                        startIcon={<EditOutlined />}
+                        sx={{
+                            backgroundColor: '#fff',
+                            color: '#001e3c', // สีข้อความ
+                            py: 1.5,
+                            borderRadius: '25px', // ขอบมนมากขึ้น
+                            width: '70%', // ขนาดกว้าง 70%
+                            mx: 'auto', // จัดให้อยู่ตรงกลางในแนวนอน
+                            textAlign: 'center', // ข้อความอยู่ตรงกลาง
+                            fontSize: '12px',
+                            mb:'20px',
+                            ml:'37px',
+                        }}
+                        onClick={handleProfileDialogOpen}
+                    >
+                        แก้ไขข้อมูลส่วนตัว
+                    </Button>
+
                 </Box>
                 <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <Button variant="contained" sx={{ backgroundColor: '#0f4c81', mb: 2, py: 1.5, marginTop: '20px', width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
                         <IconButton sx={{ color: '#fff', fontSize: '1.5rem', mr: 1 }}><PermIdentity /></IconButton>
                         Exams
                     </Button>
-                    <Button variant="contained" sx={{ backgroundColor: '#001e3c', py: 1.5, width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }} onClick={handleProfileDialogOpen}>
-                        <IconButton sx={{ color: '#fff' }}><MenuBook /></IconButton>
-                        Edit Profile
-                    </Button>
                 </Box>
             </Box>
 
             {/* Main Content */}
             <Box sx={{ flexGrow: 1, padding: '20px' }}>
-                <Typography variant="h4">Manage Subjects</Typography>
+                <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>Upload Exam</Typography>
+                {/* Search and Add Subject */}
+                <Box sx={{ display: 'flex', justifyContent: 'left', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', mr: '40px' }}>List Course</Typography>
+                    <TextField placeholder="Search for Subjects" variant="outlined" size="small" sx={{ width: '300px' }} />
+                </Box>
                 <TableContainer component={Paper}>
                     <Table>
-                        <TableHead>
+                        <TableHead sx={{ backgroundColor: '#E3F2FD' }}>
                             <TableRow>
-                                <TableCell>Subject ID</TableCell>
-                                <TableCell>Subject Name</TableCell>
-                                <TableCell>Actions</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}>Subject ID</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}>Subject Name</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}>Status</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {subjects.map((subject) => (
                                 <TableRow key={subject.S_ID}>
-                                    <TableCell>{subject.S_ID}</TableCell>
-                                    <TableCell>{subject.S_name}</TableCell>
-                                    <TableCell>
-                                        <Button variant="contained" onClick={() => handleUploadDialogOpen(subject)}>
-                                            Upload Exam Details
+                                    <TableCell align="center">{subject.S_ID}</TableCell>
+                                    <TableCell align="center">{subject.S_name}</TableCell>
+                                    <TableCell align="center">
+                                        <Button
+                                            variant="contained"
+                                            sx={{
+                                                backgroundColor: subject.Status === 1 ? '#EF870C' : subject.Status === 2 ? '#F30000' : subject.Status === 3 ? '#E7D000' : subject.Status === 4 ? '#E7D000' : subject.Status === 5 ? '#40EC24' : '#40EC24',
+                                                color: '#fff',
+                                                borderRadius: '20px',
+                                                fontSize: '12px',
+                                                textTransform: 'none',
+                                                padding: '4px 12px',
+                                                width: '160px', // ขนาดปุ่มคงที่
+                                                minWidth: '160px', // ป้องกันขนาดเล็กเกินไป
+                                                textAlign: 'center'
+                                            }}
+                                        >
+                                            {subject.Status === 1 ? 'ยังไม่ได้รับไฟล์ข้อสอบ' : subject.Status === 2 ? 'รอตรวจสอบ' : subject.Status === 3 ? 'รอจัดพิมพ์' : subject.Status === 4 ? 'ข้อสอบมีปัญหา' : subject.Status === 5 ? 'จัดพิมพ์แล้ว' : 'จัดส่งข้อสอบแล้ว'}
+                                        </Button>
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <Button sx={{ backgroundColor: '#001e3c' }} startIcon={<DescriptionOutlined />} variant="contained" onClick={() => handleUploadDialogOpen(subject)}>
+                                            Edit
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -400,10 +441,10 @@ const TeacherDashboard: React.FC = () => {
 
             {/* Profile Edit Dialog */}
             <Dialog open={profileDialogOpen} onClose={handleProfileDialogClose}>
-                <DialogTitle>Edit Teacher Profile</DialogTitle>
+                <DialogTitle>Profile</DialogTitle>
                 <DialogContent>
                     <TextField
-                        label="Username"
+                        label="รหัสอาจารย์"
                         fullWidth
                         value={teacherProfile?.user.username} // เข้าถึง username ผ่าน user
                         disabled
@@ -424,14 +465,14 @@ const TeacherDashboard: React.FC = () => {
                         margin="normal"
                     />
                     <TextField
-                        label="Email"
+                        label="E-mail"
                         fullWidth
                         value={teacherProfile?.Email || ''} // ใช้ Email ตรงๆ
                         onChange={(e) => setTeacherProfile({ ...teacherProfile!, Email: e.target.value })} // อัปเดต Email ตรงๆ
                         margin="normal"
                     />
                     <TextField
-                        label="Phone"
+                        label="Tel."
                         fullWidth
                         value={teacherProfile?.Tel || ''} // ใช้ Tel ตรงๆ
                         onChange={(e) => setTeacherProfile({ ...teacherProfile!, Tel: e.target.value })} // อัปเดต Tel ตรงๆ

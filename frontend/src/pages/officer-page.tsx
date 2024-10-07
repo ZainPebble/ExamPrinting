@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, TextField, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
-import { Edit, Delete, Add, PermIdentity, MenuBook } from '@mui/icons-material';
+import { Edit, Add, DeleteOutline, MenuBook,BorderColorOutlined,AddCircleOutline,Backup } from '@mui/icons-material';
 import axios from 'axios';
 
 interface Subject {
@@ -190,7 +190,7 @@ const OfficerDashboard = () => {
                 <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <Button variant="contained" sx={{ backgroundColor: '#0f4c81', mb: 2, py: 1.5, marginTop: '20px', width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
                         <IconButton sx={{ color: '#fff', fontSize: '1.5rem', mr: 1 }}>
-                            <PermIdentity />
+                            <MenuBook />
                         </IconButton>
                         Course
                     </Button>
@@ -211,13 +211,14 @@ const OfficerDashboard = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }}>List Course</Typography>
                     <TextField placeholder="Search for Subjects" variant="outlined" size="small" sx={{ width: '300px' }} />
-                    <Button variant="contained" startIcon={<Add />} sx={{ backgroundColor: '#001e3c', py: 1.5, ml: '550px' }} onClick={handleClickOpen}>
+                    <Button variant="contained" startIcon={<AddCircleOutline />} sx={{ backgroundColor: '#001e3c', py: 1.5, ml: '550px' }} onClick={handleClickOpen}>
                         Add
                     </Button>
                     <Button
                         variant="contained"
                         color="primary"
                         sx={{ py: 1.5 }}
+                        startIcon={<Backup />}
                         onClick={handleBackupOpen}
                     >
                         Backup
@@ -229,18 +230,18 @@ const OfficerDashboard = () => {
                     <Table>
                         <TableHead sx={{ backgroundColor: '#E3F2FD' }}>
                             <TableRow>
-                                <TableCell sx={{ fontWeight: 'bold' }}>รหัสวิชา</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>ชื่อวิชา</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 'bold' }}></TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}>รหัสวิชา</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '40%' }}>ชื่อวิชา</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}>Status</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {subjects.map((subject) => (
                                 <TableRow key={subject.S_ID}>
-                                    <TableCell>{subject.S_ID}</TableCell>
-                                    <TableCell>{subject.S_name}</TableCell>
-                                    <TableCell>
+                                    <TableCell align="center">{subject.S_ID}</TableCell>
+                                    <TableCell align="center">{subject.S_name}</TableCell>
+                                    <TableCell align="center">
                                         <Button
                                             variant="contained"
                                             sx={{
@@ -249,18 +250,21 @@ const OfficerDashboard = () => {
                                                 borderRadius: '20px',
                                                 fontSize: '12px',
                                                 textTransform: 'none',
-                                                padding: '4px 12px'
+                                                padding: '4px 12px',
+                                                width: '160px', // ขนาดปุ่มคงที่
+                                                minWidth: '160px', // ป้องกันขนาดเล็กเกินไป
+                                                textAlign: 'center'
                                             }}
                                         >
                                             {subject.Status === 1 ? 'ยังไม่ได้รับไฟล์ข้อสอบ' : subject.Status === 2 ? 'รอตรวจสอบ' : subject.Status === 3 ? 'รอจัดพิมพ์' : subject.Status === 4 ? 'ข้อสอบมีปัญหา' : subject.Status === 5 ? 'จัดพิมพ์แล้ว' : 'จัดส่งข้อสอบแล้ว'}
                                         </Button>
                                     </TableCell>
                                     <TableCell align="center">
-                                        <IconButton color="primary" onClick={() => handleEditOpen(subject)}>
-                                            <Edit />
+                                        <IconButton sx={{color: '#000'}} onClick={() => handleEditOpen(subject)}>
+                                            <BorderColorOutlined />
                                         </IconButton>
-                                        <IconButton color="secondary" onClick={() => handleDeleteOpen(subject)}>
-                                            <Delete />
+                                        <IconButton sx={{color: '#000'}} onClick={() => handleDeleteOpen(subject)}>
+                                            <DeleteOutline />
                                         </IconButton>
                                     </TableCell>
                                 </TableRow>

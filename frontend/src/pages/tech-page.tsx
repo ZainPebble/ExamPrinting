@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, TextField, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
-import { Edit, Delete, Add, PermIdentity, MenuBook } from '@mui/icons-material';
+import { Box, Button, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, TextField, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, InputLabel, FormControl, RadioGroup, FormControlLabel, Radio } from '@mui/material';
+import { PermIdentity, MenuBook, BorderColorOutlined, AssessmentOutlined } from '@mui/icons-material';
 import PrintIcon from '@mui/icons-material/Print';
 import { useNavigate } from 'react-router-dom';
-
 import axios from 'axios';
 
 interface Subject {
@@ -24,6 +23,10 @@ const TechDashboard = () => {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [editOpen, setEditOpen] = useState(false);
+    const [printOpen, setPrintOpen] = useState(false);
+    const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+    const [selectedOption, setSelectedOption] = useState('ข้อสอบ');
     const [subjectData, setSubjectData] = useState<Subject>({
         S_ID: '',
         T_ID: 1,
@@ -36,8 +39,6 @@ const TechDashboard = () => {
         n_std: 0,
         Status: 1
     });
-    const [editOpen, setEditOpen] = useState(false);
-    const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -63,16 +64,6 @@ const TechDashboard = () => {
         }
     };
 
-    // แสดงสถานะการโหลดข้อมูล
-    if (loading) {
-        return <Typography>Loading...</Typography>;
-    }
-
-    // แสดง error ถ้ามีปัญหากับการดึงข้อมูล
-    if (error) {
-        return <Typography>{error}</Typography>;
-    }
-
     const handleEditOpen = (subject: Subject) => {
         setSelectedSubject(subject);
         setSubjectData(subject);
@@ -94,13 +85,63 @@ const TechDashboard = () => {
         }
     };
 
-    const handlePrintClick = (subjectId: string) => {
-        // เมื่อกดปุ่ม Print จะเปลี่ยนหน้าไปยังหน้าการปริ้นส์
-        navigate(`/print/${subjectId}`);
+    const handlePrintClick = (subject: Subject) => {
+        setSelectedSubject(subject);
+        setPrintOpen(true);
+    };
+
+    const handlePrintClose = () => {
+        setPrintOpen(false);
+    };
+
+    const handleOptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedOption(event.target.value);
     };
 
     const handleSidebarButtonClick = () => {
         window.location.href = '/backup'; // เปลี่ยนเส้นทางไปยังหน้า Tech
+    };
+
+    const handleDownloadClick = async (S_ID: string) => {
+        try {
+            const response = await axios.get(`http://localhost:3000/subjects/${S_ID}/latest-exam`, {
+                responseType: 'blob'
+            });
+
+            const fileBlob = new Blob([response.data], { type: response.headers['content-type'] });
+            const fileURL = URL.createObjectURL(fileBlob);
+
+            const link = document.createElement('a');
+            link.href = fileURL;
+            link.setAttribute('download', `exam_${S_ID}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(fileURL);
+        } catch (error) {
+            console.error("Error downloading file:", error);
+        }
+    };
+
+    const handlePrintConfirm = () => {
+        if (selectedOption === 'ข้อสอบ') {
+            if (selectedSubject) {
+                // ฟังก์ชันสำหรับการโหลดข้อสอบ
+                console.log("Load exam file");
+                handleDownloadClick(selectedSubject.S_ID); // เรียกใช้ฟังก์ชันดาวน์โหลดไฟล์ข้อสอบ
+            } else {
+                console.error("No subject selected for downloading exam.");
+            }
+        } else if (selectedOption === 'ใบปะหน้าซอง') {
+            if (selectedSubject) {
+                // ฟังก์ชันสำหรับไปยังหน้าปริ้นส์
+                console.log("Navigate to print page");
+                navigate(`/print/${selectedSubject.S_ID}`); // นำทางไปยังหน้าปริ้นใบปะหน้าซอง
+            } else {
+                console.error("No subject selected for printing cover page.");
+            }
+        }
+        setPrintOpen(false); // ปิด Dialog หลังจากทำงานเสร็จ
     };
 
     const handleChange = (event: { target: { name: any; value: any; }; }) => {
@@ -115,6 +156,14 @@ const TechDashboard = () => {
         });
     };
 
+    if (loading) {
+        return <Typography>Loading...</Typography>;
+    }
+
+    if (error) {
+        return <Typography>{error}</Typography>;
+    }
+
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
             {/* Sidebar */}
@@ -126,7 +175,7 @@ const TechDashboard = () => {
                 <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <Button variant="contained" sx={{ backgroundColor: '#0f4c81', mb: 2, py: 1.5, marginTop: '20px', width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
                         <IconButton sx={{ color: '#fff', fontSize: '1.5rem', mr: 1 }}>
-                            <PermIdentity />
+                            <AssessmentOutlined />
                         </IconButton>
                         Exams
                     </Button>
@@ -138,34 +187,30 @@ const TechDashboard = () => {
                     </Button>
                 </Box>
             </Box>
-
-            {/* Main Content */}
             <Box sx={{ flexGrow: 1, padding: '20px' }}>
                 <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>Exam Status</Typography>
-
                 {/* Search and Add Subject */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>List Exam</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'left', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold',mr:'40px' }}>List Exam</Typography>
                     <TextField placeholder="Search for Subjects" variant="outlined" size="small" sx={{ width: '300px' }} />
                 </Box>
-
-                {/* Subject Table */}
                 <TableContainer component={Paper}>
                     <Table>
                         <TableHead sx={{ backgroundColor: '#E3F2FD' }}>
                             <TableRow>
-                                <TableCell sx={{ fontWeight: 'bold' }}>รหัสวิชา</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>ชื่อวิชา</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 'bold' }}></TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}>รหัสวิชา</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '40%' }}>ชื่อวิชา</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '10%' }}>Status</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '10%' }}></TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {subjects.map((subject) => (
                                 <TableRow key={subject.S_ID}>
-                                    <TableCell>{subject.S_ID}</TableCell>
-                                    <TableCell>{subject.S_name}</TableCell>
-                                    <TableCell>
+                                    <TableCell align="center">{subject.S_ID}</TableCell>
+                                    <TableCell align="center">{subject.S_name}</TableCell>
+                                    <TableCell align="center">
                                         <Button
                                             variant="contained"
                                             sx={{
@@ -174,17 +219,30 @@ const TechDashboard = () => {
                                                 borderRadius: '20px',
                                                 fontSize: '12px',
                                                 textTransform: 'none',
-                                                padding: '4px 12px'
+                                                padding: '4px 12px',
+                                                width: '160px', // ขนาดปุ่มคงที่
+                                                minWidth: '160px', // ป้องกันขนาดเล็กเกินไป
+                                                textAlign: 'center'
                                             }}
                                         >
                                             {subject.Status === 1 ? 'ยังไม่ได้รับไฟล์ข้อสอบ' : subject.Status === 2 ? 'รอตรวจสอบ' : subject.Status === 3 ? 'รอจัดพิมพ์' : subject.Status === 4 ? 'ข้อสอบมีปัญหา' : subject.Status === 5 ? 'จัดพิมพ์แล้ว' : 'จัดส่งข้อสอบแล้ว'}
                                         </Button>
-                                        <IconButton color="primary" onClick={() => handleEditOpen(subject)}>
-                                            <Edit />
+                                    </TableCell>
+                                    <TableCell align="left">
+                                        <IconButton
+                                            onClick={() => handleEditOpen(subject)}
+                                            sx={{
+                                                padding: '4px', // ทำให้ปุ่มเล็กลง
+                                                minWidth: '0', // ป้องกันปุ่มให้ใหญ่ขึ้น
+                                                width: '24px', // ขนาดที่ต้องการให้เล็กลง
+                                                height: '24px',
+                                                color: '#000'
+                                            }}
+                                        >
+                                            <BorderColorOutlined fontSize="small" />
                                         </IconButton>
                                     </TableCell>
                                     <TableCell align="center">
-
                                         <Button
                                             variant="outlined"
                                             startIcon={<PrintIcon />}
@@ -195,7 +253,7 @@ const TechDashboard = () => {
                                                     borderColor: 'black',
                                                 },
                                             }}
-                                            onClick={() => handlePrintClick(subject.S_ID)}
+                                            onClick={() => handlePrintClick(subject)}
                                         >
                                             Print
                                         </Button>
@@ -205,11 +263,13 @@ const TechDashboard = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+
+
             </Box>
 
             {/* Dialog Edit Subject */}
-            <Dialog open={editOpen} onClose={handleEditClose}>
-                <DialogTitle sx={{ backgroundColor: '#0f4c81', color: 'white' }}>Edit Subject</DialogTitle>
+            <Dialog open={editOpen} onClose={handleEditClose} maxWidth="xs" fullWidth>
+                <DialogTitle sx={{ backgroundColor: '#0f4c81', color: 'white' }}>Status</DialogTitle>
                 <DialogContent>
                     <FormControl fullWidth sx={{ mt: 2 }}>
                         <InputLabel>Status</InputLabel>
@@ -231,7 +291,71 @@ const TechDashboard = () => {
                 <DialogActions>
                     <Button onClick={handleEditClose} sx={{ color: '#6c757d' }}>Cancel</Button>
                     <Button variant="contained" onClick={() => handleEditSubject()} sx={{ backgroundColor: '#0f4c81' }}>
-                        Save
+                        Edit
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Print Dialog */}
+            <Dialog
+                open={printOpen}
+                onClose={handlePrintClose}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: '20px',
+                        padding: '16px',
+                        backgroundColor: '#FFFFFF'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ textAlign: 'left', fontWeight: 'bold', fontSize: '24px', color: '#000' }}>
+                    Printing
+                </DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'left' }}>
+                        <Typography sx={{ mb: 2, fontSize: '16px', color: '#8E8E8E' }}>ต้องการที่จะสั่งพิมพ์สิ่งใด?</Typography>
+                        <RadioGroup value={selectedOption} onChange={handleOptionChange}>
+                            <FormControlLabel
+                                value="ข้อสอบ"
+                                control={<Radio sx={{ color: '#1E2F97', '&.Mui-checked': { color: '#1E2F97' } }} />}
+                                label="ข้อสอบ"
+                            />
+                            <FormControlLabel
+                                value="ใบปะหน้าซอง"
+                                control={<Radio sx={{ color: '#1E2F97', '&.Mui-checked': { color: '#1E2F97' } }} />}
+                                label="ใบปะหน้าซอง"
+                            />
+                        </RadioGroup>
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ justifyContent: 'center', padding: '16px' }}>
+                    <Button
+                        onClick={handlePrintClose}
+                        sx={{
+                            backgroundColor: '#E0E0E0',
+                            color: '#000',
+                            fontWeight: 'bold',
+                            textTransform: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 24px'
+                        }}
+                    >
+                        ยกเลิก
+                    </Button>
+                    <Button
+                        onClick={handlePrintConfirm}
+                        sx={{
+                            backgroundColor: '#1E2F97',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            textTransform: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 24px'
+                        }}
+                    >
+                        พิมพ์
                     </Button>
                 </DialogActions>
             </Dialog>

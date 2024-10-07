@@ -282,32 +282,38 @@ app.post('/backup', async (req: any, res: any) => {
   }
 });
 
-// API สำหรับดึงข้อมูล Subject พร้อมรายละเอียดการสอบ
+// API สำหรับดึงข้อมูล Subject พร้อมรายละเอียดการสอบที่มี XD_ID มากที่สุด
 app.get('/subject/:id', async (req, res) => {
   const id = req.params.id;
 
   try {
-    const subject = await prisma.subject.findUnique({
-      where: {
-        S_ID: id
-      },
-      include: {
-        exams: true // รวมข้อมูลจาก ExamDetail
-      }
-    });
-    res.json(subject);
+      const subject = await prisma.subject.findUnique({
+          where: {
+              S_ID: id
+          },
+          include: {
+              exams: {
+                  orderBy: {
+                      XD_ID: 'desc' // จัดเรียงโดย XD_ID มากที่สุด
+                  },
+                  take: 1 // ดึงเฉพาะรายการแรกที่มี XD_ID สูงสุด
+              }
+          }
+      });
+
+      res.json(subject);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve data' });
+      res.status(500).json({ error: 'Failed to retrieve data' });
   }
 });
 
 // GET ทั้งหมดจากตาราง Backup
 app.get('/backup', async (req, res) => {
   try {
-    const backups = await prisma.backup.findMany();
-    res.json(backups);
+      const backups = await prisma.backup.findMany();
+      res.json(backups);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching backups' });
+      res.status(500).json({ error: 'Error fetching backups' });
   }
 });
 
@@ -363,6 +369,7 @@ app.get('/subjects/find', async (req: Request, res: Response) => {
       select: {
         S_ID: true,
         S_name: true,
+        Status: true,
       },
     });
     res.json(subjects);
@@ -483,9 +490,9 @@ app.get('/teachers/profile', async (req: Request, res: any) => {
   }
 });
 
-app.put('/update', async (req: any, res: any) => {
+app.put('/teachers/update', async (req: any, res: any) => {
   const { T_ID, Fname, Lname, email, phone } = req.body;
-
+  console.log(T_ID, Fname, Lname, email, phone)
   try {
       // ค้นหา Teacher ตาม T_ID
       const teacher = await prisma.teacher.findUnique({
@@ -526,6 +533,38 @@ app.put('/update', async (req: any, res: any) => {
   }
 });
 
+// ในฝั่ง backend (Node.js / Express / Prisma)
+app.get('/subjects/:S_ID/latest-exam', async (req: any, res: any) => {
+  const { S_ID } = req.params;
+
+  try {
+      const latestExam = await prisma.examDetail.findFirst({
+          where: { S_ID: String(S_ID) },
+          orderBy: {
+              XD_ID: 'desc', // ดึงไฟล์ที่มี XD_ID มากที่สุด
+          },
+      });
+
+      if (!latestExam || !latestExam.ExamFile) {
+          return res.status(404).json({ message: 'No exam found for this subject or file is missing' });
+      }
+
+      // ประเภทของไฟล์ (ปรับตามความเหมาะสมกับประเภทไฟล์ที่เก็บ)
+      const fileType = 'application/pdf'; // ตัวอย่างสำหรับไฟล์ PDF
+
+      // ส่งข้อมูล Binary ของไฟล์ไปให้ client
+      res.set({
+          'Content-Type': fileType,
+          'Content-Disposition': `attachment; filename="exam_${S_ID}.pdf"`, // ตั้งชื่อไฟล์
+          'Content-Length': latestExam.ExamFile.length
+      });
+
+      return res.send(Buffer.from(latestExam.ExamFile));
+  } catch (error) {
+      console.error('Error fetching latest exam:', error);
+      return res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 
 app.listen(3000, () => {

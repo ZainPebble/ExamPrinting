@@ -11,8 +11,9 @@ import {
     TableHead,
     TableRow,
     Paper,
+    TextField
 } from '@mui/material';
-import { PermIdentity, MenuBook,Delete } from '@mui/icons-material';
+import { PermIdentity, MenuBook,Delete,AssessmentOutlined } from '@mui/icons-material';
 import axios from 'axios';
 
 interface Backup {
@@ -127,7 +128,9 @@ const BackupDashboard = () => {
                         onClick={handleSidebarButtonClick}
                     >
                         <IconButton sx={{ color: '#fff', fontSize: '1.5rem', mr: 1 }}>
-                            <PermIdentity />
+                            {userType === '1' && <PermIdentity/>}
+                            {userType === '3' && <MenuBook/>}
+                            {userType === '4' && <AssessmentOutlined/>}
                         </IconButton>
                         {userType === '1' && 'User'}
                         {userType === '3' && 'Course'}
@@ -145,6 +148,11 @@ const BackupDashboard = () => {
             {/* Main Content */}
             <Box sx={{ flexGrow: 1, padding: '20px' }}>
                 <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>Backup Dashboard</Typography>
+                {/* Search and Add Subject */}
+                <Box sx={{ display: 'flex', justifyContent: 'left', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold',mr:'40px' }}>List Course</Typography>
+                    <TextField placeholder="Search for Subjects" variant="outlined" size="small" sx={{ width: '300px' }} />
+                </Box>
 
                 {/* Backup Table */}
                 <TableContainer component={Paper}>

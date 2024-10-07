@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, TextField, Container, Typography, Box } from '@mui/material';
+import { Container, Typography, Box, TextField, Button, IconButton, InputAdornment } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import axios, { AxiosError } from 'axios';
 
 const LoginPage: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = React.useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
@@ -49,53 +51,100 @@ const LoginPage: React.FC = () => {
           }
     };
 
+    const handleClickShowPassword = () => {
+        setShowPassword(!showPassword);
+    };
+
     return (
-        <Container
-            maxWidth="sm"
+        <Box
             sx={{
-                backgroundColor: 'white',
-                padding: 4,
-                borderRadius: 4,
-                textAlign: 'center',
-                boxShadow: 3,
-                mt: 10,
+                backgroundColor: '#152259',
+                minHeight: '100vh',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
             }}
         >
-            <Typography variant="h4" component="h1" gutterBottom>
-                Exam Printing System
-            </Typography>
-            <Box
-                component="form"
+            <Container
+                maxWidth="sm"
                 sx={{
-                    '& .MuiTextField-root': { m: 1, width: '100%' },
+                    backgroundColor: 'white',
+                    padding: 4,
+                    borderRadius: 4,
+                    textAlign: 'center',
+                    boxShadow: 3,
                 }}
-                noValidate
-                autoComplete="off"
             >
-                <TextField
-                    label="Enter Username"
-                    variant="outlined"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                />
-                <TextField
-                    label="Enter Password"
-                    variant="outlined"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <Button
-                    variant="contained"
-                    fullWidth
-                    color="primary"
-                    onClick={handleLogin} // แก้ไขตรงนี้
+                <Typography
+                    variant="h4"
+                    component="h1"
+                    gutterBottom
+                    sx={{
+                        fontSize: '3rem', // ปรับขนาดตัวอักษร
+                        color: '#152259', // สีตัวอักษร
+                        mt:'30px',
+                        mb:'30px',
+                        textShadow: '1px 1px 2px rgba(0, 0, 0, 0.2)', // เพิ่มเงาเล็กน้อย
+                    }}
                 >
-                    Login
-                </Button>
-                {error && <p>{error}</p>}
-            </Box>
-        </Container>
+                    Exam Printing System
+                </Typography>
+                <Box
+                    component="form"
+                    sx={{
+                        '& .MuiTextField-root': { m: 1, width: '60%' }, // ปรับความกว้างของ TextField
+                    }}
+                    noValidate
+                    autoComplete="off"
+                >
+                    <TextField
+                        label="Enter Username"
+                        variant="outlined"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                    />
+                    <TextField
+                        label="Enter Password"
+                        variant="outlined"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        aria-label="toggle password visibility"
+                                        onClick={handleClickShowPassword}
+                                        edge="end"
+                                    >
+                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                    <Button
+                        variant="contained"
+                        fullWidth
+                        color="primary"
+                        sx={{
+                            width: '60%', // ปรับความกว้างของปุ่ม
+                            mt:'10px',
+                            mb:'60px',
+                            height: '3rem', // ปรับความสูงของปุ่ม
+                            backgroundColor: '#1e2a78', // สีน้ำเงินเข้มกว่า #152259
+                            '&:hover': {
+                                backgroundColor: '#152259', // เปลี่ยนสีเมื่อ hover
+                            },
+                        }}
+                        onClick={handleLogin}
+                    >
+                        Login
+                    </Button>
+                    {error && <p>{error}</p>}
+                </Box>
+            </Container>
+        </Box>
     );
 };
 
