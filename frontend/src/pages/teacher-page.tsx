@@ -12,11 +12,17 @@ import {
     TableRow,
     Paper,
     Typography,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    FormControlLabel,
+    Checkbox,
 } from '@mui/material';
 import { Add, PermIdentity, MenuBook } from '@mui/icons-material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import UploadFile from './UploadFile';
 
 // กำหนดประเภทสำหรับ Subject
 interface Subject {
@@ -39,6 +45,20 @@ interface ExamDetail {
     Additional: string;
 }
 
+interface User {
+    username: string;
+    Fname: string;
+    Lname: string;
+}
+
+interface TeacherProfile {
+    T_ID: number;
+    user: User; // รักษาชื่อผู้ใช้, ชื่อจริง, และนามสกุลไว้ใน user
+    Email: string;
+    Tel: string;
+}
+
+
 const TeacherDashboard: React.FC = () => {
     const username = localStorage.getItem('username');
     const name = localStorage.getItem('name');
@@ -60,6 +80,10 @@ const TeacherDashboard: React.FC = () => {
     });
     const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
     const [uploadDialogOpen, setUploadDialogOpen] = useState<boolean>(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [profileDialogOpen, setProfileDialogOpen] = useState<boolean>(false);
+    const [teacherProfile, setTeacherProfile] = useState<TeacherProfile | null>(null);
+    const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -86,13 +110,10 @@ const TeacherDashboard: React.FC = () => {
     }, [username]);
 
     useEffect(() => {
-        console.log("T_ID:", T_ID); // ตรวจสอบว่าได้ค่า T_ID หรือไม่
-
         const fetchSubjects = async () => {
             if (T_ID !== null) { // ตรวจสอบว่า T_ID มีค่าก่อน
                 try {
                     const response = await axios.get<Subject[]>(`http://localhost:3000/subjects/find?t_id=${T_ID}`);
-                    console.log("Subjects fetched:", response.data); // log ข้อมูลที่ดึงมา
                     setSubjects(response.data);
                 } catch (error) {
                     console.error("Error fetching subjects:", error);
@@ -102,6 +123,24 @@ const TeacherDashboard: React.FC = () => {
 
         fetchSubjects();
     }, [T_ID]);
+
+    useEffect(() => {
+        const fetchTeacherProfile = async () => {
+            if (T_ID !== null) {
+                try {
+                    const response = await axios.get<TeacherProfile>(`http://localhost:3000/teachers/profile?t_id=${T_ID}`);
+                    setTeacherProfile(response.data);
+                } catch (err) {
+                    console.error("Error fetching teacher profile:", err);
+                    setError('Failed to fetch teacher profile.');
+                }
+            }
+        };
+
+        fetchTeacherProfile();
+    }, [T_ID]);
+
+
 
     const handleUploadDialogOpen = (subject: Subject) => {
         setSelectedSubject(subject);
@@ -119,6 +158,7 @@ const TeacherDashboard: React.FC = () => {
             Tool_MfRuler: false,
             Additional: '',
         });
+        setSelectedFile(null); // เคลียร์ไฟล์ที่เลือกเมื่อเปิด Dialog
     };
 
     const handleUploadDialogClose = () => {
@@ -132,30 +172,85 @@ const TeacherDashboard: React.FC = () => {
         }
 
         const requestData = {
-            S_ID: selectedSubject.S_ID, // แทนที่ด้วย ID ที่ถูกต้อง
-            Exam_period: parseInt(examDetail.Exam_period, 10), // เปลี่ยนให้เป็น number
-            Type_exam: parseInt(examDetail.Type_exam, 10), // เปลี่ยนให้เป็น number
-            Date: examDetail.Date, // ต้องเป็น string ในรูปแบบวันที่
-            Exam_start: examDetail.Exam_start, // ต้องเป็น string ในรูปแบบเวลา
-            Exam_end: examDetail.Exam_end, // ต้องเป็น string ในรูปแบบเวลา
-            Room: examDetail.Room, // ต้องเป็น string
-            Side: parseInt(examDetail.Side, 10), // เปลี่ยนให้เป็น number
-            Tool_Book: Boolean(examDetail.Tool_Book), // ต้องเป็น boolean
-            Tool_Calculator: Boolean(examDetail.Tool_Calculator), // ต้องเป็น boolean
-            Tool_MfRuler: Boolean(examDetail.Tool_MfRuler), // ต้องเป็น boolean
-            Additional: examDetail.Additional // ต้องเป็น stringF
+            S_ID: selectedSubject.S_ID,
+            Exam_period: examDetail.Exam_period,
+            Type_exam: examDetail.Type_exam,
+            Date: examDetail.Date,
+            Exam_start: examDetail.Exam_start,
+            Exam_end: examDetail.Exam_end,
+            Room: examDetail.Room,
+            Side: examDetail.Side,
+            Tool_Book: examDetail.Tool_Book,
+            Tool_Calculator: examDetail.Tool_Calculator,
+            Tool_MfRuler: examDetail.Tool_MfRuler,
+            Additional: examDetail.Additional,
         };
 
-        console.log("Request Data:", requestData); // เพิ่ม log ที่นี่
-
         try {
-            const response = await axios.post('http://localhost:3000/exam-details', requestData);
-            console.log('Upload successful:', response.data);
+            const formData = new FormData();
+            formData.append('S_ID', selectedSubject.S_ID);
+            formData.append('Exam_period', requestData.Exam_period);
+            formData.append('Type_exam', requestData.Type_exam);
+            formData.append('Date', requestData.Date);
+            formData.append('Exam_start', requestData.Exam_start);
+            formData.append('Exam_end', requestData.Exam_end);
+            formData.append('Room', requestData.Room);
+            formData.append('Side', requestData.Side);
+            formData.append('Tool_Book', String(requestData.Tool_Book));
+            formData.append('Tool_Calculator', String(requestData.Tool_Calculator));
+            formData.append('Tool_MfRuler', String(requestData.Tool_MfRuler));
+            formData.append('Additional', requestData.Additional);
+
+            // Append the file with the key 'file' to match the API requirement
+            if (selectedFile) {
+                formData.append('file', selectedFile); // Ensure this key matches the API's expectation
+            }
+
+            // อัปโหลดข้อมูลทั้งหมดที่รวมทั้งรายละเอียดข้อสอบและไฟล์
+            const response = await axios.post('http://localhost:3000/exam-details', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            console.log('Exam details upload successful:', response.data);
+            handleUploadDialogClose(); // ปิด Dialog หลังอัปโหลดสำเร็จ
         } catch (error) {
-            console.error('Error uploading exam detail:');
+            console.error('Error uploading data:', error);
         }
     };
 
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files ? event.target.files[0] : null;
+        setSelectedFile(file); // ตั้งค่าไฟล์ที่เลือก
+    };
+
+    const handleProfileDialogOpen = () => {
+        setProfileDialogOpen(true);
+    };
+
+    const handleProfileDialogClose = () => {
+        setProfileDialogOpen(false);
+    };
+
+    const handleProfileUpdate = async () => {
+        if (!teacherProfile) return; // ตรวจสอบว่า teacherProfile มีข้อมูลหรือไม่
+    
+        try {
+            const response = await axios.put(`http://localhost:3000/teachers/update`, {
+                T_ID: teacherProfile.T_ID, // ใช้ T_ID ที่ถูกต้อง
+                Fname: teacherProfile.user.Fname, // เข้าถึง Fname ผ่าน user
+                Lname: teacherProfile.user.Lname, // เข้าถึง Lname ผ่าน user
+                email: teacherProfile.Email, // ใช้ Email ตรงๆ
+                phone: teacherProfile.Tel, // ใช้ Tel ตรงๆ
+            });
+            console.log("Profile updated:", response.data);
+            handleProfileDialogClose();
+        } catch (error) {
+            console.error("Error updating profile:", error);
+        }
+    };
+    
 
     if (loading) return <Typography>Loading...</Typography>;
 
@@ -172,9 +267,9 @@ const TeacherDashboard: React.FC = () => {
                         <IconButton sx={{ color: '#fff', fontSize: '1.5rem', mr: 1 }}><PermIdentity /></IconButton>
                         Exams
                     </Button>
-                    <Button variant="contained" sx={{ backgroundColor: '#001e3c', py: 1.5, width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }} onClick={() => navigate('/backup')}>
+                    <Button variant="contained" sx={{ backgroundColor: '#001e3c', py: 1.5, width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'left' }} onClick={handleProfileDialogOpen}>
                         <IconButton sx={{ color: '#fff' }}><MenuBook /></IconButton>
-                        Backup Course
+                        Edit Profile
                     </Button>
                 </Box>
             </Box>
@@ -197,11 +292,8 @@ const TeacherDashboard: React.FC = () => {
                                     <TableCell>{subject.S_ID}</TableCell>
                                     <TableCell>{subject.S_name}</TableCell>
                                     <TableCell>
-                                        <Button
-                                            onClick={() => handleUploadDialogOpen(subject)}
-                                            startIcon={<Add />}
-                                        >
-                                            Upload Exam Detail
+                                        <Button variant="contained" onClick={() => handleUploadDialogOpen(subject)}>
+                                            Upload Exam Details
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -209,16 +301,151 @@ const TeacherDashboard: React.FC = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
-
-                {/* Upload Exam Detail Dialog */}
-                <UploadFile
-                    open={uploadDialogOpen}
-                    onClose={handleUploadDialogClose}
-                    onUpload={handleExamDetailUpload} // เรียกใช้ฟังก์ชันนี้เมื่อทำการอัปโหลดข้อมูล
-                    examDetail={examDetail}
-                    setExamDetail={setExamDetail}
-                />
             </Box>
+
+            {/* Dialog for Uploading Exam Details */}
+            <Dialog open={uploadDialogOpen} onClose={handleUploadDialogClose}>
+                <DialogTitle>Upload Exam Detail and File</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        label="Exam Period"
+                        fullWidth
+                        value={examDetail.Exam_period}
+                        onChange={(e) => setExamDetail({ ...examDetail, Exam_period: e.target.value })}
+                        margin="normal"
+                    />
+                    <TextField
+                        label="Type of Exam"
+                        fullWidth
+                        value={examDetail.Type_exam}
+                        onChange={(e) => setExamDetail({ ...examDetail, Type_exam: e.target.value })}
+                        margin="normal"
+                    />
+                    <TextField
+                        label="Date"
+                        fullWidth
+                        type="date"
+                        value={examDetail.Date}
+                        onChange={(e) => setExamDetail({ ...examDetail, Date: e.target.value })}
+                        margin="normal"
+                        InputLabelProps={{ shrink: true }}
+                    />
+                    <TextField
+                        label="Exam Start"
+                        fullWidth
+                        type="time"
+                        value={examDetail.Exam_start}
+                        onChange={(e) => setExamDetail({ ...examDetail, Exam_start: e.target.value })}
+                        margin="normal"
+                        InputLabelProps={{ shrink: true }}
+                    />
+                    <TextField
+                        label="Exam End"
+                        fullWidth
+                        type="time"
+                        value={examDetail.Exam_end}
+                        onChange={(e) => setExamDetail({ ...examDetail, Exam_end: e.target.value })}
+                        margin="normal"
+                        InputLabelProps={{ shrink: true }}
+                    />
+                    <TextField
+                        label="Room"
+                        fullWidth
+                        value={examDetail.Room}
+                        onChange={(e) => setExamDetail({ ...examDetail, Room: e.target.value })}
+                        margin="normal"
+                    />
+                    <TextField
+                        label="Side"
+                        fullWidth
+                        value={examDetail.Side}
+                        onChange={(e) => setExamDetail({ ...examDetail, Side: e.target.value })}
+                        margin="normal"
+                    />
+                    <FormControlLabel
+                        control={<Checkbox checked={examDetail.Tool_Book} onChange={(e) => setExamDetail({ ...examDetail, Tool_Book: e.target.checked })} />}
+                        label="Tools: Book"
+                    />
+                    <FormControlLabel
+                        control={<Checkbox checked={examDetail.Tool_Calculator} onChange={(e) => setExamDetail({ ...examDetail, Tool_Calculator: e.target.checked })} />}
+                        label="Tools: Calculator"
+                    />
+                    <FormControlLabel
+                        control={<Checkbox checked={examDetail.Tool_MfRuler} onChange={(e) => setExamDetail({ ...examDetail, Tool_MfRuler: e.target.checked })} />}
+                        label="Tools: Mf Ruler"
+                    />
+                    <TextField
+                        label="Additional Notes"
+                        fullWidth
+                        multiline
+                        rows={4}
+                        value={examDetail.Additional}
+                        onChange={(e) => setExamDetail({ ...examDetail, Additional: e.target.value })}
+                        margin="normal"
+                    />
+                    <input
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={handleFileChange}
+                        style={{ marginTop: '10px' }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleUploadDialogClose}>Cancel</Button>
+                    <Button onClick={handleExamDetailUpload} variant="contained" color="primary" disabled={!selectedSubject || !selectedFile}>
+                        Upload
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Profile Edit Dialog */}
+            <Dialog open={profileDialogOpen} onClose={handleProfileDialogClose}>
+                <DialogTitle>Edit Teacher Profile</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        label="Username"
+                        fullWidth
+                        value={teacherProfile?.user.username} // เข้าถึง username ผ่าน user
+                        disabled
+                        margin="normal"
+                    />
+                    <TextField
+                        label="First Name"
+                        fullWidth
+                        value={teacherProfile?.user.Fname || ''} // เข้าถึง Fname ผ่าน user
+                        onChange={(e) => setTeacherProfile({ ...teacherProfile!, user: { ...teacherProfile!.user, Fname: e.target.value } })} // อัปเดต Fname ผ่าน user
+                        margin="normal"
+                    />
+                    <TextField
+                        label="Last Name"
+                        fullWidth
+                        value={teacherProfile?.user.Lname || ''} // เข้าถึง Lname ผ่าน user
+                        onChange={(e) => setTeacherProfile({ ...teacherProfile!, user: { ...teacherProfile!.user, Lname: e.target.value } })} // อัปเดต Lname ผ่าน user
+                        margin="normal"
+                    />
+                    <TextField
+                        label="Email"
+                        fullWidth
+                        value={teacherProfile?.Email || ''} // ใช้ Email ตรงๆ
+                        onChange={(e) => setTeacherProfile({ ...teacherProfile!, Email: e.target.value })} // อัปเดต Email ตรงๆ
+                        margin="normal"
+                    />
+                    <TextField
+                        label="Phone"
+                        fullWidth
+                        value={teacherProfile?.Tel || ''} // ใช้ Tel ตรงๆ
+                        onChange={(e) => setTeacherProfile({ ...teacherProfile!, Tel: e.target.value })} // อัปเดต Tel ตรงๆ
+                        margin="normal"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleProfileDialogClose}>Cancel</Button>
+                    <Button onClick={handleProfileUpdate} variant="contained" color="primary">
+                        Save
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
         </Box>
     );
 };

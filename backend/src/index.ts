@@ -8,8 +8,8 @@ import multer from 'multer';
 const app = express();
 const prisma = new PrismaClient();
 // ตั้งค่า multer สำหรับการอัปโหลดไฟล์
-const storage = multer.memoryStorage(); // ใช้ memory storage เพื่อจัดการไฟล์ในหน่วยความจำ
-const upload = multer({ storage });
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 const SECRET_KEY = 'your_secret_key';
 // Enable CORS for requests from all origins
@@ -61,7 +61,7 @@ app.post('/login', async (req: any, res: any) => {
     res.status(200).json({
       message: 'Login successful',
       token,
-      user: { username: user.username,u_type: user.u_type, name: user.Fname }
+      user: { username: user.username, u_type: user.u_type, name: user.Fname }
     });
   } catch (error) {
     res.status(500).json({ message: 'Internal server error' });
@@ -354,93 +354,177 @@ app.get('/teachers/find', async (req: Request, res: Response) => {
 
 app.get('/subjects/find', async (req: Request, res: Response) => {
   const { t_id } = req.query;
-  console.log("T_ID from query:", t_id);  // log ค่า T_ID ที่ส่งเข้ามา
-  
+
   try {
-      const subjects = await prisma.subject.findMany({
-          where: {
-              T_ID: Number(t_id),  // ตรวจสอบว่าค่า t_id ถูกแปลงเป็นตัวเลข
-          },
-          select: {
-              S_ID: true,
-              S_name: true,
-          },
-      });
-      res.json(subjects);
+    const subjects = await prisma.subject.findMany({
+      where: {
+        T_ID: Number(t_id),  // ตรวจสอบว่าค่า t_id ถูกแปลงเป็นตัวเลข
+      },
+      select: {
+        S_ID: true,
+        S_name: true,
+      },
+    });
+    res.json(subjects);
   } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Failed to fetch subjects' });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch subjects' });
   }
 });
 
-app.post('/exam-details', async (req: any, res: any) => {
+app.post('/exam-details', upload.single('file'), async (req: any, res: any) => {
   console.log("Request body:", req.body); // ตรวจสอบค่าที่ได้รับ
+  console.log("Uploaded file:", req.file);
   try {
-      const { 
-          S_ID, 
-          Exam_period, 
-          Type_exam, 
-          Date: examDateInput, // เปลี่ยนชื่อตัวแปรเพื่อหลีกเลี่ยงการชนกัน
-          Exam_start, 
-          Exam_end, 
-          Room, 
-          Side, 
-          Tool_Book, 
-          Tool_Calculator, 
-          Tool_MfRuler, 
-          Additional 
-      } = req.body;
+    const {
+      S_ID,
+      Exam_period,
+      Type_exam,
+      Date: examDateInput, // เปลี่ยนชื่อตัวแปรเพื่อหลีกเลี่ยงการชนกัน
+      Exam_start,
+      Exam_end,
+      Room,
+      Side,
+      Tool_Book,
+      Tool_Calculator,
+      Tool_MfRuler,
+      Additional
+    } = req.body;
 
-      // ตรวจสอบว่ามีข้อมูลที่จำเป็นครบถ้วนหรือไม่
-      if (!S_ID || !Exam_period || !Type_exam || !examDateInput || !Exam_start || !Exam_end || !Room || !Side) {
-          return res.status(400).json({ error: 'Missing required fields' });
+    // ตรวจสอบว่ามีข้อมูลที่จำเป็นครบถ้วนหรือไม่
+    if (!S_ID || !Exam_period || !Type_exam || !examDateInput || !Exam_start || !Exam_end || !Room || !Side) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // คำนวณ XD_ID ใหม่ โดยนับจำนวนรายการที่มีอยู่แล้วใน S_ID
+    const newXD_ID = await prisma.examDetail.count({ where: { S_ID } }) + 1;
+
+    // สร้างตัวแปรวันที่
+    const examDate = new Date(examDateInput); // ใช้ตัวแปร examDateInput
+    const examStart = new Date(`1970-01-01T${Exam_start}Z`);
+    const examEnd = new Date(`1970-01-01T${Exam_end}Z`);
+
+    // ตรวจสอบการสร้างวันที่ว่าเป็นวันจริงหรือไม่
+    if (isNaN(examDate.getTime()) || isNaN(examStart.getTime()) || isNaN(examEnd.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    // ตรวจสอบว่ามีไฟล์หรือไม่
+    const examFileBuffer = req.file ? req.file.buffer : Buffer.from([]); // ถ้ามีไฟล์ให้ใช้ buffer ของไฟล์ ถ้าไม่มีให้เป็น buffer ว่างเปล่า
+    console.log("Buffer file:", req.file.buffer);
+    // สร้างข้อมูล ExamDetail ใหม่ในฐานข้อมูล
+    const examDetail = await prisma.examDetail.create({
+      data: {
+        S_ID,
+        XD_ID: newXD_ID, // ใช้ XD_ID ที่คำนวณใหม่
+        Exam_period: parseInt(Exam_period, 10),
+        Type_exam: parseInt(Type_exam, 10),
+        Date: examDate,
+        Exam_start: examStart,
+        Exam_end: examEnd,
+        Room,
+        Side: parseInt(Side, 10),
+        Tool_Book: Tool_Book === 'true',
+        Tool_Calculator: Tool_Calculator === 'true',
+        Tool_MfRuler: Tool_MfRuler === 'true',
+        Additional,
+        ExamFile: examFileBuffer // ใช้ไฟล์ที่ถูกอัปโหลดหรือ buffer ว่างเปล่า
+      },
+    });
+
+    // ส่ง Response กลับ
+    return res.status(201).json({ message: 'Exam detail created successfully', examDetail });
+  } catch (error) {
+    // แสดงข้อผิดพลาดใน Console และคืนค่า Response
+    console.error("Error creating exam detail:", error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+app.get('/teachers/profile', async (req: Request, res: any) => {
+  const { t_id } = req.query; // รับ T_ID จาก query parameter
+  console.log("T_ID from query:", t_id);  // log ค่า T_ID ที่ส่งเข้ามา
+  try {
+    if (!t_id) {
+      return res.status(400).json({ message: 'T_ID is required' });
+    }
+
+    // ค้นหาข้อมูลอาจารย์จาก T_ID
+    const teacher = await prisma.teacher.findUnique({
+      where: {
+        T_ID: Number(t_id) // ตรวจสอบให้แน่ใจว่า T_ID เป็นตัวเลข
+      },
+      select: {
+        T_ID: true,
+        user: {
+          select: {
+            username: true,
+            Fname: true,
+            Lname: true,
+          }
+        },
+        Email: true,
+        Tel: true,
       }
+    });
 
-      // คำนวณ XD_ID ใหม่ โดยนับจำนวนรายการที่มีอยู่แล้วใน S_ID
-      const newXD_ID = await prisma.examDetail.count({ where: { S_ID } }) + 1;
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
 
-      // สร้างตัวแปรวันที่
-      const examDate = new Date(examDateInput); // ใช้ตัวแปร examDateInput
-      const examStart = new Date(`1970-01-01T${Exam_start}Z`);
-      const examEnd = new Date(`1970-01-01T${Exam_end}Z`);
+    // ส่งข้อมูลโปรไฟล์ของอาจารย์กลับไป
+    return res.json(teacher);
+  } catch (error) {
+    console.error('Error fetching teacher profile:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
-      // ตรวจสอบการสร้างวันที่ว่าเป็นวันจริงหรือไม่
-      if (isNaN(examDate.getTime()) || isNaN(examStart.getTime()) || isNaN(examEnd.getTime())) {
-          return res.status(400).json({ error: 'Invalid date format' });
-      }
+app.put('/update', async (req: any, res: any) => {
+  const { T_ID, Fname, Lname, email, phone } = req.body;
 
-      const examDetail = await prisma.examDetail.create({
-          data: {
-              S_ID,
-              XD_ID: newXD_ID, // ใช้ XD_ID ที่คำนวณใหม่
-              Exam_period: parseInt(Exam_period, 10),
-              Type_exam: parseInt(Type_exam, 10),
-              Date: examDate,
-              Exam_start: examStart,
-              Exam_end: examEnd,
-              Room,
-              Side: parseInt(Side, 10),
-              Tool_Book: Tool_Book === 'true',
-              Tool_Calculator: Tool_Calculator === 'true',
-              Tool_MfRuler: Tool_MfRuler === 'true',
-              Additional,
-              ExamFile: Buffer.from([]), // กำหนดให้เป็น Buffer ที่ว่างเปล่า
+  try {
+      // ค้นหา Teacher ตาม T_ID
+      const teacher = await prisma.teacher.findUnique({
+          where: {
+              T_ID: T_ID,
+          },
+          include: {
+              user: true, // รวมข้อมูล User เพื่อทำการอัปเดต
           },
       });
 
-      // ส่ง Response กลับ
-      return res.status(201).json(examDetail);
-  } catch (error) {
-      // แสดงข้อผิดพลาดใน Console และคืนค่า Response
-      console.error("Error creating exam detail:", error);
-      return res.status(500).json({ 
-          error: 'Internal Server Error', 
-          details: error instanceof Error ? error.message : 'Unknown error' 
+      if (!teacher) {
+          return res.status(404).json({ message: 'Teacher not found' });
+      }
+
+      // อัปเดตข้อมูล User
+      const updatedUser = await prisma.user.update({
+          where: { username: teacher.user.username }, // ใช้ username จาก teacher.user
+          data: {
+              Fname: Fname,
+              Lname: Lname,
+          },
       });
+
+      // อัปเดตข้อมูล Teacher ถ้าจำเป็น
+      const updatedTeacher = await prisma.teacher.update({
+          where: { T_ID: T_ID },
+          data: {
+              Tel: phone,
+              Email: email,
+          },
+      });
+
+      return res.status(200).json({ message: 'Profile updated successfully', updatedTeacher, updatedUser });
+  } catch (error) {
+      console.error("Error updating teacher profile:", error);
+      return res.status(500).json({ message: 'Internal server error' });
   }
 });
-
-
 
 
 
